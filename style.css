@@ -1,0 +1,796 @@
+/* ==========================================
+   1. 基本設定 & 全体リセット
+   ========================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: 'DotGothic16', 'Press Start 2P', 'Courier New', monospace, sans-serif;
+}
+
+body {
+  background-color: #080808;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  color: #fff;
+  overflow: hidden;
+}
+
+#game-container {
+  width: 100%;
+  max-width: 420px;
+  height: 100vh;
+  max-height: 840px;
+  background-color: #121212;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+  border: 3px solid #333;
+}
+
+.screen {
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  background-size: cover;
+  background-position: center;
+}
+
+.hidden { display: none !important; }
+
+/* ドット絵風テキスト強調 */
+.pixel-text {
+  font-family: 'DotGothic16', sans-serif;
+  text-shadow: 2px 2px #000;
+  letter-spacing: 1px;
+}
+
+/* ==========================================
+   2. 共通UI・ボタンパーツ
+   ========================================== */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+/* 基本RPGボタン */
+.rpg-btn {
+  background: linear-gradient(180deg, #f39c12 0%, #d35400 100%);
+  color: #fff;
+  border: 2px solid #fff;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4), 0 4px 0 #8e44ad;
+  padding: 10px 20px;
+  font-weight: bold;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-shadow: 1px 1px 2px #000;
+  transition: transform 0.05s;
+}
+.rpg-btn:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 2px 0 #8e44ad;
+}
+
+/* 小型RPGボタン */
+.rpg-btn-sm {
+  background: linear-gradient(180deg, #455a64 0%, #2c3e50 100%);
+  color: #fff;
+  border: 1px solid #95a5a6;
+  box-shadow: 0 2px 0 #111;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-shadow: 1px 1px 1px #000;
+  font-weight: bold;
+}
+.rpg-btn-sm:active {
+  transform: translateY(1px);
+}
+
+/* 危険・削除系ボタン */
+.danger-btn {
+  background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%) !important;
+  border-color: #fff !important;
+}
+
+/* 閉じるボタン */
+.close-btn {
+  position: relative !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  background: #c0392b;
+  color: #fff;
+  border: 1px solid #fff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+/* 設定用歯車ボタン */
+.config-icon-btn {
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid #f1c40f;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
+}
+#config-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 2px #fff);
+}
+
+/* ==========================================
+   3. タイトル画面
+   ========================================== */
+#screen-title {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px 12px;
+  cursor: pointer;
+  position: relative;
+}
+
+#title-logo-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+#title-logo-img {
+  max-width: 85%;
+  max-height: 220px;
+  object-fit: contain;
+  margin: auto;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.9));
+  animation: floatAnim 3s ease-in-out infinite;
+}
+
+.game-logo {
+  font-size: 26px;
+  color: #f1c40f;
+  text-shadow: 3px 3px #c0392b;
+  animation: floatAnim 3s ease-in-out infinite;
+}
+
+@keyframes floatAnim {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+#title-bottom-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  margin-bottom: 30px;
+  pointer-events: none;
+}
+
+.blink {
+  animation: blink 1s infinite;
+  color: #f39c12;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 1px 1px #000;
+}
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+#game-version {
+  font-size: 11px;
+  color: #2ecc71;
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 3px 12px;
+  border-radius: 12px;
+  border: 1px solid #2ecc71;
+}
+
+/* ==========================================
+   4. メインメニュー画面
+   ========================================== */
+.menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #444;
+  padding-bottom: 6px;
+}
+
+.menu-status-panel {
+  background: rgba(20, 20, 20, 0.8);
+  border: 2px solid #555;
+  border-radius: 8px;
+  padding: 10px;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed #333;
+  padding-bottom: 4px;
+  font-size: 13px;
+}
+.status-row.highlight-row {
+  background: rgba(44, 62, 80, 0.8);
+  padding: 6px;
+  border-radius: 6px;
+  border-bottom: none;
+  font-size: 13px;
+}
+.status-label { color: #ccc; font-weight: bold; }
+.status-val { color: #f1c40f; font-weight: bold; }
+.status-val-sm { color: #3498db; font-size: 11px; }
+
+.tap-level-container {
+  flex-direction: column;
+  align-items: stretch;
+  border-bottom: 1px dashed #333;
+  padding-bottom: 6px;
+}
+.tap-level-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.level-bar-bg { width: 100%; height: 8px; background: #333; border-radius: 4px; overflow: hidden; border: 1px solid #555; }
+.level-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #3498db, #2ecc71); transition: width 0.2s; }
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  flex: 1;
+  align-content: center;
+}
+.menu-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(180deg, rgba(52, 73, 94, 0.9) 0%, rgba(26, 37, 47, 0.9) 100%);
+  border: 2px solid #5d6d7e;
+  color: #fff;
+  padding: 14px 6px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #000;
+}
+.menu-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #000;
+}
+.menu-btn.primary {
+  grid-column: span 2;
+  flex-direction: row;
+  background: linear-gradient(180deg, rgba(230, 126, 34, 0.9) 0%, rgba(211, 84, 0, 0.9) 100%);
+  border-color: #f39c12;
+  font-size: 16px;
+  padding: 12px;
+}
+.btn-icon { font-size: 22px; }
+
+/* ==========================================
+   5. 冒険（クリッカー）画面（背景透過の調整）
+   ========================================== */
+.adventure-top-bar { margin-bottom: 6px; }
+#area-header-fixed { display: flex; align-items: center; gap: 8px; }
+#area-badge {
+  background: rgba(17, 17, 17, 0.8);
+  border: 2px solid #f1c40f;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+}
+#area-name { font-size: 12px; font-weight: bold; color: #f1c40f; text-shadow: 1px 1px #000; }
+
+.area-map-btn {
+  background: linear-gradient(180deg, rgba(39, 174, 96, 0.9) 0%, rgba(30, 132, 73, 0.9) 100%);
+  border: 1px solid #fff;
+  color: #fff;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 6px 8px;
+  border-radius: 6px;
+  width: 105px;
+  text-align: center;
+  box-shadow: 0 2px 0 #000;
+  margin-left: auto;
+}
+
+#mode-switch-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.mode-tab-btn {
+  flex: 1;
+  background: rgba(34, 34, 34, 0.8);
+  color: #aaa;
+  border: 2px solid #555;
+  padding: 8px 0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.mode-tab-btn.active {
+  background: linear-gradient(180deg, rgba(41, 128, 185, 0.9) 0%, rgba(26, 82, 118, 0.9) 100%);
+  color: #fff;
+  border-color: #3498db;
+  text-shadow: 1px 1px #000;
+}
+
+/* ★枠内側の透過度を薄くし背景を透過（rgba 0.85 -> 0.45）★ */
+#battle-card {
+  flex: 2.5;
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(2px);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+#timer-wrapper { width: 100%; }
+#timer-container {
+  width: 100%; height: 10px;
+  background: rgba(17, 17, 17, 0.8); border-radius: 5px;
+  overflow: hidden; border: 1.5px solid #ff5555;
+  box-shadow: 0 0 6px rgba(255, 0, 0, 0.5);
+}
+#timer-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #ff7675, #d63031); transition: width 0.1s linear; }
+#timer-text { font-size: 11px; color: #ff7675; margin-top: 2px; font-weight: bold; }
+
+#target-name { font-size: 20px; font-weight: bold; color: #f1c40f; text-shadow: 2px 2px 4px #000; margin: 2px 0; }
+#target-sprite-container {
+  flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 4px 0;
+}
+#target-image { max-width: 180px; max-height: 180px; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8)); }
+#target-sprite { font-size: 100px; transition: transform 0.05s; cursor: pointer; }
+#target-sprite.hit, #target-image.hit { transform: scale(0.88) rotate(-5deg); }
+
+#hp-bar-container { width: 100%; height: 10px; background: rgba(51, 51, 51, 0.8); border-radius: 5px; overflow: hidden; border: 1px solid #555; }
+#hp-bar { height: 100%; background: #2ecc71; width: 100%; transition: width 0.1s; }
+#hp-text { font-size: 11px; color: #eee; text-shadow: 1px 1px 2px #000; }
+
+/* ★連打エリアも薄く透過（rgba 0.5）★ */
+#click-area {
+  height: 80px;
+  background: radial-gradient(circle, rgba(44, 62, 80, 0.6) 0%, rgba(13, 17, 23, 0.6) 100%);
+  border: 2px dashed rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(2px);
+  border-radius: 8px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  cursor: pointer; margin-bottom: 8px;
+}
+.tap-hint { font-size: 11px; color: #f39c12; font-weight: bold; text-shadow: 1px 1px 2px #000; }
+#weapon-image { max-width: 40px; max-height: 40px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); }
+#weapon-icon { font-size: 32px; }
+
+.adventure-bottom-nav { display: flex; gap: 8px; }
+.adv-sub-btn {
+  flex: 1; background: rgba(34, 34, 34, 0.85); border: 1px solid #555; color: #fff; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;
+}
+
+/* ==========================================
+   6. モーダル ＆ 図鑑レイアウト
+   ========================================== */
+.scroll-list { flex: 1; overflow-y: auto; padding-right: 4px; }
+
+.fullscreen-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 100;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+.fullscreen-overlay.front-modal { z-index: 300 !important; }
+.fullscreen-content { display: flex; flex-direction: column; height: 100%; }
+
+#screen-zukan {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#screen-zukan .fullscreen-content {
+  width: calc(100% - 24px);
+  height: calc(100% - 24px);
+  margin: auto;
+  background: rgba(20, 15, 10, 0.9);
+  border: 3px solid #8e6d3b;
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
+  box-sizing: border-box;
+}
+
+/* タブボタン */
+.zukan-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.zukan-tab-btn, .equip-tab-btn, .craft-tab-btn {
+  flex: 1;
+  background: linear-gradient(180deg, #4a3821 0%, #2a1e10 100%);
+  color: #d4af37;
+  border: 1px solid #8e6d3b;
+  padding: 6px 0;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  text-shadow: 1px 1px 2px #000;
+}
+.zukan-tab-btn.active, .equip-tab-btn.active, .craft-tab-btn.active {
+  background: linear-gradient(180deg, #d4af37 0%, #8e6d3b 100%);
+  color: #1a0f05;
+  border-color: #fff;
+  text-shadow: none;
+}
+
+.zukan-tab-btn[data-ztab="object"] {
+  font-size: 10px !important;
+  padding: 6px 1px !important;
+}
+
+/* ★図鑑詳細カードの統一統一レイアウト★ */
+#screen-zukan .zukan-card {
+  background: linear-gradient(135deg, #f4e4bc 0%, #e6ce9a 100%);
+  border: 2px solid #7a5c29;
+  border-radius: 6px;
+  color: #2b1a08;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  box-shadow: 2px 3px 6px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#screen-zukan .zukan-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+#screen-zukan .zukan-title {
+  color: #6b1111 !important;
+  font-size: 13px; font-weight: bold;
+  border-bottom: 1px dashed #8e6d3b;
+  padding-bottom: 2px; margin-bottom: 2px;
+}
+#screen-zukan .zukan-desc { color: #4a3520 !important; font-size: 11px; line-height: 1.3; }
+#screen-zukan .zukan-sub { color: #1b5e20 !important; font-size: 10px; margin-top: 2px; font-weight: bold; }
+
+#screen-zukan .zukan-card.unknown {
+  background: linear-gradient(135deg, #2b2219 0%, #17120e 100%);
+  border-color: #4a3821; color: #7a634e; opacity: 0.7;
+}
+#screen-zukan .zukan-card.unknown .zukan-title { color: #8e6d3b !important; border-bottom-color: #4a3821; }
+
+/* ==========================================
+   7. カード内配置 & 画像拡大モーダル
+   ========================================== */
+.map-card, .craft-card, .mat-card, .equip-card {
+  background: #181818;
+  border: 1px solid #444;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.zukan-icon, .mat-icon, .equip-icon, .craft-icon {
+  font-size: 28px;
+  min-width: 40px;
+  height: 40px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.zukan-img, .mat-img, .equip-img, .craft-img {
+  width: 36px; height: 36px; object-fit: contain; cursor: pointer;
+}
+
+.craft-btn, .equip-btn, .map-btn {
+  margin-left: auto !important;
+  min-width: 80px;
+  text-align: center;
+}
+
+.craft-btn.can-craft {
+  background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%) !important;
+  color: #fff !important;
+  border: 1px solid #a3e4d7 !important;
+  box-shadow: 0 2px 0 #1e8449 !important;
+  cursor: pointer;
+}
+
+.craft-btn.cannot-craft {
+  background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%) !important;
+  color: #fff !important;
+  border: 1px solid #fadbd8 !important;
+  box-shadow: 0 2px 0 #78281f !important;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.equip-slots-panel {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+}
+.slot-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px dashed #333;
+  padding-bottom: 2px;
+}
+.slot-item strong { color: #f1c40f; }
+
+#material-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  overflow-y: auto;
+}
+.empty-msg {
+  grid-column: span 2;
+  text-align: center;
+  color: #888;
+  padding: 40px 0;
+  font-size: 14px;
+}
+
+/* ★画像プレビュー用モーダルの配置統一（他ヘッダーと位置合わせ）★ */
+.popup-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.modal-box {
+  background: #1c1c1c;
+  border: 3px solid #666;
+  padding: 16px;
+  border-radius: 10px;
+  width: 85%;
+  max-width: 330px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.9);
+}
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 6px;
+}
+
+.img-preview-box {
+  background: #111;
+  border: 2px solid #f1c40f;
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 85%;
+  max-width: 300px;
+}
+.img-preview-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+}
+#preview-img { width: 160px; height: 160px; object-fit: contain; }
+#preview-caption { font-size: 14px; color: #f1c40f; font-weight: bold; }
+
+/* 設定画面・ログパーツ */
+.setting-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; font-weight: bold; }
+.img-toggle-btn { background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; }
+.img-toggle-btn img { width: 42px; height: 26px; object-fit: contain; }
+.setting-buttons-group { display: flex; gap: 8px; margin-top: 12px; justify-content: center; }
+
+.changelog-item { background: #222; border: 1px solid #444; border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 11px; }
+.changelog-version { font-size: 12px; font-weight: bold; color: #f1c40f; margin-bottom: 2px; }
+
+/* 装備画面のボタン（未装備状態） */
+.equip-btn {
+  background: linear-gradient(180deg, #34495e 0%, #2c3e50 100%);
+  color: #fff;
+  border: 1px solid #7f8c8d;
+  box-shadow: 0 2px 0 #111;
+  cursor: pointer;
+}
+
+/* ★現在装備中のボタン（ゴールド強調＆視認性アップ）★ */
+.equip-btn.equipped {
+  background: linear-gradient(180deg, #f39c12 0%, #d35400 100%) !important;
+  color: #fff !important;
+  border: 2px solid #fff !important;
+  box-shadow: 0 0 8px rgba(241, 196, 15, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px #000;
+  opacity: 1 !important;
+}
+
+/* --- スキルツリー風 錬金画面 --- */
+/* --- スキルツリー風 錬金画面（画像メイン・横スクロール対応） --- */
+.craft-tree-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 4px;
+}
+
+.tree-row {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tree-cat-label {
+  font-size: 11px;
+  font-weight: bold;
+  color: #f1c40f;
+  border-bottom: 1px solid #444;
+  padding-bottom: 4px;
+}
+
+/* 4つ以上並んでも横スクロールで快適に見られる設定 */
+.tree-nodes-container {
+  display: flex;
+  align-items: center;
+  overflow-x: auto; /* 横スクロールを有効化 */
+  padding: 6px 4px;
+  -webkit-overflow-scrolling: touch; /* スマホでの操作感をスムーズに */
+}
+
+/* ノード枠（文字を消して画像メインの正方形に近い形に変更） */
+.tree-node {
+  min-width: 52px;
+  width: 52px;
+  height: 52px;
+  background: #222;
+  border: 2px solid #555;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0; /* 横スクロール時に潰れるのを防ぐ */
+  transition: transform 0.1s, border-color 0.1s;
+}
+
+.tree-node:active {
+  transform: scale(0.92);
+}
+
+/* 状態ごとのノードカラー */
+.tree-node.unlocked {
+  border-color: #2ecc71;
+  background: #1e392a;
+}
+.tree-node.craftable {
+  border-color: #f1c40f;
+  background: #3d3516;
+  animation: pulse-border 1.5s infinite;
+}
+.tree-node.locked {
+  border-color: #444;
+  opacity: 0.6;
+}
+.tree-node.hidden-node {
+  border-color: #222;
+  opacity: 0.2;
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: #f1c40f; }
+  50% { border-color: #ffffff; }
+}
+
+.node-icon-box {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tree-node-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.tree-node-icon {
+  font-size: 26px;
+}
+
+/* 作成済みバッジ（チェックマーク風に小型化） */
+.node-status {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  background: #2ecc71;
+  color: #000;
+  font-size: 9px;
+  font-weight: bold;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ノード同士を繋ぐ横線 */
+.tree-line {
+  min-width: 18px;
+  height: 3px;
+  background: #444;
+  flex-shrink: 0;
+}
+.tree-line.active {
+  background: #2ecc71;
+}

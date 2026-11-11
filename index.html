@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>爆打錬成！武器鍛冶クラフター</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#24307a">
+  <link rel="icon" href="assets/images/icon/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/images/icon/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Reggae+One&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+
+  <!-- 見た目（CSS）：役割ごとにファイルを分けています -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/screens.css">
+  <link rel="stylesheet" href="css/forge.css">
+  <link rel="stylesheet" href="css/zukan.css">
+  <link rel="stylesheet" href="css/story.css">
+  <link rel="stylesheet" href="css/minigame.css">
+</head>
+<body>
+<div id="rotate-guard"><div class="rg-ico">📱</div><div class="rg-title">画面を縦にしてね</div><div class="rg-text">このゲームは縦画面専用です。</div></div>
+<audio id="bgm-player" loop preload="none"></audio>
+
+<div id="game-container">
+
+  <!-- ================= タイトル ================= -->
+  <section id="title-screen" class="screen active">
+    <div class="title-logo-box">
+      <img id="title-logo" src="assets/images/ui/logo_title.png" alt="爆打錬成！武器鍛冶クラフター" onerror="this.remove(); byId('title-logo-text').hidden=false;">
+      <h1 id="title-logo-text" class="title-logo-text" hidden>爆打錬成！<br>武器鍛冶クラフター</h1>
+    </div>
+    <div class="version-text" id="version-label">v1.0.0</div>
+    <div class="tagline">たたいて、あつめて、きたえよう。<br>165だんかいの ぶき を つくれるかな？</div>
+    <button class="btn-rpg is-orange title-btn" id="btn-start">⚒️ はじめる</button>
+  </section>
+
+  <!-- ================= メインメニュー ================= -->
+  <section id="menu-screen" class="screen">
+    <div class="header-icon-btns">
+      <button class="round-icon-btn" id="btn-config" aria-label="設定">
+        <img src="assets/images/ui/config.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'⚙️'}))">
+      </button>
+    </div>
+    <div class="menu-title">メインメニュー<span class="menu-clear-star" id="menu-clear-star" hidden title="クリア！">★</span></div>
+
+    <div class="rpg-window menu-status-box">
+      <div class="status-equip"><span class="status-equip-img" id="menu-weapon-img"></span>
+        <div><div class="label">そうび中のぶき</div><div id="menu-weapon-name" class="val-gold">ひのきのぼう</div></div>
+        <div class="atk-badge">ATK<b id="menu-atk">1</b></div>
+      </div>
+      <div class="status-row"><span>⚡ タップLv.<b id="menu-level">1</b></span><span class="sub"><span id="menu-exp">0</span> / <span id="menu-next">10</span> EXP</span></div>
+      <div class="bar-outer"><div id="menu-exp-bar" class="bar-inner is-exp"></div></div>
+      <div class="status-row"><span>🎒 もっている そざい</span><b class="val-gold"><span id="menu-mats">0</span> こ</b></div>
+      <div class="status-row"><span>📊 たおした / こわした</span><b><span id="menu-kill-m">0</span> / <span id="menu-kill-o">0</span></b></div>
+      <div class="status-row"><span>🔨 つくった武器</span><b><span id="menu-crafted">0</span> こ</b></div>
+      <div class="status-row"><span>⏱️ プレイ時間</span><b id="menu-time">0時間00分</b></div>
+    </div>
+
+    <button class="btn-rpg is-orange menu-main" id="btn-adventure">⚔️ ぼうけんに でる</button>
+    <div class="menu-grid">
+      <button class="btn-rpg is-blue" id="btn-forge">🔨 かじや</button>
+      <button class="btn-rpg is-blue" id="btn-equip">🛡️ そうび</button>
+      <button class="btn-rpg is-blue" id="btn-zukan">📖 ずかん</button>
+      <button class="btn-rpg is-blue" id="btn-items">🎒 もちもの</button>
+      <button class="btn-rpg is-purple" id="btn-achv">🏆 じっせき<span class="menu-badge" id="achv-badge" hidden>0</span></button>
+      <button class="btn-rpg is-purple" id="btn-story">📜 おはなし</button>
+    </div>
+    <button class="btn-rpg is-green menu-howto" id="btn-howto">❓ あそびかた</button>
+  </section>
+
+  <!-- ================= ぼうけん（連打） ================= -->
+  <section id="adventure-screen" class="screen">
+    <div class="ui-header">
+      <div class="ui-header-top">
+        <button class="sound-btn" id="adv-sound-btn"><img id="adv-sound-img" src="assets/images/ui/supika_o.png" alt="音"></button>
+        <div class="header-level-box"><span>Lv.<b id="adv-level">1</b></span><div class="bar-outer"><div id="adv-exp-bar" class="bar-inner is-exp"></div></div></div>
+        <div class="header-area" id="adv-area-name">始まりの平原</div>
+      </div>
+      <div class="ui-header-btns">
+        <button class="btn-rpg sm is-red" id="adv-home">🏠 メニュー</button>
+        <button class="btn-rpg sm is-blue" id="adv-map">🗺️ エリア</button>
+        <button class="btn-rpg sm is-blue" id="adv-zukan">📖 ずかん</button>
+      </div>
+    </div>
+
+    <div class="tool-mode-toggle">
+      <button class="tool-mode-btn active" data-mode="monster">⚔️ たたかう</button>
+      <button class="tool-mode-btn" data-mode="object">⛏️ さがす</button>
+    </div>
+
+    <div id="battle-card" class="rpg-window">
+      <div id="timer-wrap"><div class="bar-outer"><div id="timer-bar" class="bar-inner is-time"></div></div><div id="timer-text">のこり <b>10.0</b> 秒</div></div>
+      <div class="target-name-row"><span id="target-name">スライム</span><button class="btn-rpg xs is-gray" id="btn-skip">⏩ つぎ</button></div>
+      <div id="target-stage"><div id="target-visual"></div><div id="adv-log"></div></div>
+      <div class="bar-outer hp"><div id="hp-bar" class="bar-inner is-hp"></div></div>
+      <div id="hp-text">HP <b id="hp-cur">10</b> / <span id="hp-max">10</span></div>
+    </div>
+
+    <div id="tap-area">
+      <div id="tap-weapon"></div>
+      <div class="tap-hint">ここを れんだ！</div>
+      <div class="tap-atk">ATK<b id="adv-atk">1</b></div>
+    </div>
+    <div class="adv-bottom"><button class="btn-rpg sm is-blue" id="adv-items">🎒 もちもの</button></div>
+    <div id="adv-empty" class="adv-empty" hidden>このエリアは じゅんび中 です。<br>🗺️ エリア から ほかの場所へ いこう！</div>
+  </section>
+
+  <!-- ================= 鍛冶屋（ワールドマップ） ================= -->
+  <section id="forge-screen" class="screen">
+    <div class="wk-head">
+      <div class="wk-title">🔨 かじや</div>
+      <div class="wk-gold">🎒 そざい <b id="forge-mats">0</b> こ</div>
+    </div>
+    <div class="forge-kind-tabs">
+      <button class="wk-tab active" data-kind="weapon">⚔️ ぶき</button>
+      <button class="wk-tab" data-kind="acc">💍 アクセ</button>
+    </div>
+    <div class="chip-scroller"><button class="chip-arrow left" aria-label="左へ">‹</button><div id="forge-type-chips" class="chip-row"></div><button class="chip-arrow right" aria-label="右へ">›</button></div>
+
+    <div id="forge-viewport">
+      <div id="forge-world"></div>
+      <canvas id="forge-minimap" width="120" height="150"></canvas>
+      <div class="forge-zoom-btns">
+        <button id="forge-zoom-in" aria-label="ズームイン">＋</button>
+        <button id="forge-zoom-out" aria-label="ズームアウト">－</button>
+        <button id="forge-zoom-all" aria-label="全体">🌍</button>
+      </div>
+      <button id="forge-jump-next" class="btn-rpg sm is-orange">📍 つぎの強化へ</button>
+      <div id="forge-progress-pill"></div>
+    </div>
+
+    <!-- 段階をタップしたときの詳細パネル -->
+    <div id="forge-panel" class="rpg-window">
+      <button class="panel-close" id="forge-panel-close">✖</button>
+      <div class="fp-top">
+        <div class="fp-img" id="fp-img"></div>
+        <div class="fp-info">
+          <div class="fp-stage" id="fp-stage">No.1</div>
+          <div class="fp-name" id="fp-name">---</div>
+          <div class="fp-atk">ATK <b id="fp-atk">1</b> <span id="fp-atk-diff"></span></div>
+        </div>
+      </div>
+      <div class="fp-desc" id="fp-desc"></div>
+      <div class="fp-cost" id="fp-cost"></div>
+      <button class="btn-rpg is-orange fp-btn" id="fp-craft">🔨 きたえる！</button>
+      <button class="btn-rpg is-blue fp-btn" id="fp-reforge">🔁 打ち込みやり直し</button>
+    </div>
+
+    <button class="btn-rpg is-red wk-back" id="forge-back">🏠 メニューへ もどる</button>
+  </section>
+
+  <!-- ================= 図鑑（釣りゲームの絵巻と同じ構造） ================= -->
+  <section id="zukan-screen" class="screen">
+    <div class="zukan-header">
+      <span class="zukan-title">ぜんちの ずかん</span>
+      <button class="btn-rpg sm is-red" id="zukan-close">とじる</button>
+    </div>
+    <div class="zukan-main-tabs" id="zukan-tabs">
+      <button class="zukan-main-tab" data-tab="monster">モンスター</button>
+      <button class="zukan-main-tab" data-tab="object">オブジェ</button>
+      <button class="zukan-main-tab" data-tab="weapon">ぶき</button>
+      <button class="zukan-main-tab" data-tab="acc">アクセ</button>
+      <button class="zukan-main-tab" data-tab="material">そざい</button>
+    </div>
+    <div class="zukan-progress">
+      <div class="zukan-progress-text"><span>コンプリート率</span><span id="zukan-progress-num">0% (0/0)</span></div>
+      <div class="bar-outer"><div id="zukan-progress-bar" class="bar-inner is-zukan"></div></div>
+    </div>
+    <div class="zukan-filter" id="zukan-filter"></div>
+    <div class="zukan-grid" id="zukan-grid"></div>
+  </section>
+
+  <!-- ================= エンディング ================= -->
+  <section id="ending-screen" class="screen">
+    <div class="end-sky"></div>
+    <div class="end-sun"></div>
+    <div class="end-stars"></div>
+    <div id="ending-parade"></div>
+    <div class="end-flash"></div>
+    <div class="end-defeat"><div class="end-defeat-icon">😈</div><div class="end-defeat-text">まおうゼノグリムを<br>たおした！</div></div>
+    <div class="end-roll-wrap"><div id="ending-credits"></div></div>
+    <button class="btn-rpg xs is-gray" id="ending-skip" hidden>スキップ ⏩</button>
+    <div id="ending-end" hidden>
+      <div class="end-the">THE END</div>
+      <div class="end-stamp">CLEAR!</div>
+      <div class="end-msg">おめでとう！ せかいに へいわが もどった！<br><small>このあとも ぶきを きたえて、ずかん と 実績 の コンプリートを めざそう！</small></div>
+      <button class="btn-rpg is-orange" id="ending-menu">🏠 メニューへ</button>
+    </div>
+  </section>
+
+  <!-- 実績達成のお知らせ（画面の中に出る） -->
+  <div id="achv-pop"></div>
+
+  <!-- ================= ポップアップ（モーダル） ================= -->
+
+  <!-- ストーリー（会話） -->
+  <div id="story-modal" class="modal front">
+    <div class="story-bg" id="story-bg"></div>
+    <div class="story-place" id="story-place"></div>
+    <div class="story-flash" id="story-flash"></div>
+    <div class="story-title" id="story-title"></div>
+    <button class="btn-rpg xs is-gray" id="story-skip">スキップ ⏭</button>
+    <div class="story-box rpg-window" id="story-box">
+      <div class="story-face" id="story-face"></div>
+      <div class="story-main">
+        <div class="story-name" id="story-name"></div>
+        <div class="story-text" id="story-text"></div>
+      </div>
+      <div class="story-next" id="story-next">▼</div>
+    </div>
+  </div>
+
+  <!-- おはなし（見なおす） -->
+  <div id="storylog-modal" class="modal">
+    <div class="modal-box">
+      <div class="modal-title">📜 おはなし</div>
+      <div class="secret-lead">見た おはなしを もういちど 見られるよ</div>
+      <div class="modal-scroll storylog-list" id="storylog-list"></div>
+      <button class="btn-rpg sm is-blue modal-close" data-close="storylog-modal">とじる</button>
+    </div>
+  </div>
+
+  <!-- 実績 -->
+  <div id="achv-modal" class="modal">
+    <div class="modal-box achv-box">
+      <div class="modal-title">🏆 じっせき</div>
+      <div class="achv-progress">
+        <div class="zukan-progress-text"><span>たっせい度</span><span id="achv-progress-num">0%</span></div>
+        <div class="bar-outer"><div id="achv-progress-bar" class="bar-inner is-zukan"></div></div>
+      </div>
+      <div class="chip-scroller"><button class="chip-arrow left" aria-label="左へ">‹</button><div class="chip-row" id="achv-tabs"></div><button class="chip-arrow right" aria-label="右へ">›</button></div>
+      <div class="modal-scroll achv-list" id="achv-list"></div>
+      <button class="btn-rpg sm is-blue modal-close" data-close="achv-modal">とじる</button>
+    </div>
+  </div>
+
+  <!-- 図鑑：エリア / 種類えらび -->
+  <div id="zukan-pick-modal" class="modal front">
+    <div class="modal-box">
+      <div class="modal-title" id="zukan-pick-title">📍 エリアをえらぶ</div>
+      <div class="modal-scroll" id="zukan-pick-list"></div>
+      <button class="btn-rpg sm is-blue modal-close" data-close="zukan-pick-modal">とじる</button>
+    </div>
+  </div>
+
+  <!-- 図鑑：くわしく -->
+  <div id="zukan-detail-modal" class="modal">
+    <div class="modal-box detail-box">
+      <div class="detail-no" id="zd-no">No.001</div>
+      <div class="modal-title" id="zd-title">---</div>
+      <div class="detail-img" id="zd-img"></div>
+      <div class="detail-hint">（タップで大きく見る）</div>
+      <div class="detail-desc" id="zd-desc">---</div>
+      <div class="detail-stats" id="zd-stats"></div>
+      <button class="btn-rpg sm is-blue modal-close" data-close="zukan-detail-modal">とじる</button>
+    </div>
+  </div>
+
+  <!-- エリア移動 -->
+  <div id="map-modal" class="modal">
+    <div class="modal-box map-box">
+      <div class="modal-title" id="map-title">🗺️ どの地方へ いく？</div>
+      <div class="map-sub" id="map-sub"></div>
+      <div class="modal-scroll map-sea" id="map-list"></div>
+      <div class="map-btns">
+        <button class="btn-rpg sm is-gray" id="map-back" hidden>← 地方えらび</button>
+        <button class="btn-rpg sm is-blue" data-close="map-modal">とじる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- もちもの -->
+  <div id="items-modal" class="modal">
+    <div class="modal-box">
+      <div class="modal-title">🎒 もちもの</div>
+      <div class="items-filter" id="items-filter"></div>
+      <div class="modal-scroll mat-grid" id="items-list"></div>
+      <button class="btn-rpg sm is-blue modal-close" data-close="items-modal">とじる</button>
+    </div>
+  </div>
+
+  <!-- そうび -->
+  <div id="equip-modal" class="modal">
+    <div class="modal-box equip-box">
+      <div class="modal-title">🛡️ そうび</div>
+      <div class="equip-total">ごうけい ATK <b id="equip-total">1</b></div>
+      <div class="equip-weapon-slot" id="equip-weapon-slot"></div>
+      <div class="equip-acc-row" id="equip-acc-row"></div>
+      <div class="equip-sub-title" id="equip-list-title">もっている ぶき</div>
+      <div class="chip-scroller"><button class="chip-arrow left" aria-label="左へ">‹</button><div class="chip-row" id="equip-type-chips"></div><button class="chip-arrow right" aria-label="右へ">›</button></div>
+      <div class="modal-scroll equip-list" id="equip-list"></div>
+      <button class="btn-rpg sm is-blue modal-close" data-close="equip-modal">とじる</button>
+    </div>
+  </div>
+
+  <!-- 設定 -->
+  <div id="config-modal" class="modal">
+    <div class="modal-box">
+      <div class="modal-title">⚙️ せってい</div>
+      <div class="modal-scroll">
+        <div class="config-row vol-row"><span>🎵 BGM</span><div class="vol-steps" id="cfg-bgm-vol" data-key="bgmVol"></div></div>
+        <div class="config-row vol-row"><span>🔊 こうかおん</span><div class="vol-steps" id="cfg-se-vol" data-key="seVol"></div></div>
+        <div class="config-row"><span>しんどう（バイブ）</span><button class="btn-rpg xs is-green" id="cfg-vibe">ON</button></div>
+        <div class="config-row"><span>バージョン</span><b class="cfg-ver" id="cfg-version">v1.0.0</b></div>
+        <div class="cfg-btn-row">
+          <button class="btn-rpg sm is-blue" id="cfg-update">📢 アプデじょうほう</button>
+          <button class="btn-rpg sm is-purple" id="cfg-secret">🔑 かくしコマンド</button>
+        </div>
+        <div class="config-row col"><span class="danger-label">データかんり</span><button class="btn-rpg sm is-red wide" id="cfg-reset">🗑️ ぜんぶのデータを けす</button></div>
+      </div>
+      <button class="btn-rpg sm is-blue modal-close" data-close="config-modal">とじる</button>
+    </div>
+  </div>
+
+  <!-- アップデート情報 -->
+  <div id="update-modal" class="modal front">
+    <div class="modal-box">
+      <div class="modal-title">📢 アップデートじょうほう</div>
+      <div class="modal-scroll update-list" id="update-list"></div>
+      <button class="btn-rpg sm is-blue modal-close" data-close="update-modal">とじる</button>
+    </div>
+  </div>
+
+  <!-- 隠しコマンド -->
+  <div id="secret-modal" class="modal front">
+    <div class="modal-box secret-box">
+      <div class="modal-title">🔑 かくしコマンド</div>
+      <div class="secret-lead">コマンドを 入力してね</div>
+      <input id="secret-input" class="secret-input" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ここに入力">
+      <div class="secret-result" id="secret-result"></div>
+      <div class="dialog-btns">
+        <button class="btn-rpg sm is-gray" data-close="secret-modal">とじる</button>
+        <button class="btn-rpg sm is-orange" id="secret-ok">けってい</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 鍛冶：できた！ -->
+  <div id="craft-result-modal" class="modal front">
+      <div class="modal-box craft-result-box">
+        <!-- ① ハンマーで カンカン（タップでとばせる） -->
+        <div class="cr-hammer" id="cr-hammer">
+          <div class="crh-label">🔥 きたえ中… <small>（タップでとばす）</small></div>
+          <div class="crh-stage">
+            <div class="crh-item" id="crh-item"></div>
+            <div class="crh-anvil"><i></i></div>
+            <div class="crh-hammer" id="crh-hammer">🔨</div>
+            <div class="crh-text" id="crh-text"></div>
+          </div>
+        </div>
+        <!-- ② 「◯◯ 完成！」 -->
+        <div class="cr-reveal">
+          <div class="cr-rays"></div>
+          <div class="cr-flash"></div>
+          <div class="cr-title" id="cr-title">完成！</div>
+          <div class="cr-img-wrap"><span class="cr-new" id="cr-new">NEW!</span><div class="cr-img" id="cr-img"></div></div>
+          <div class="cr-stage" id="cr-stage">剣 No.1</div>
+          <div class="cr-grade" id="cr-grade"></div>
+          <div class="cr-atk">ATK <b id="cr-atk">1</b> <span id="cr-diff"></span></div>
+          <div class="cr-equip" id="cr-equip"></div>
+          <div class="dialog-btns">
+            <button class="btn-rpg sm is-gray" id="cr-close">とじる</button>
+            <button class="btn-rpg sm is-orange" id="cr-next">▶ つぎの強化へ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 鍛冶のミニゲーム -->
+    <div id="mg-layer" class="modal front">
+      <div class="mg-box">
+        <div class="mg-head"><b id="mg-title">🔨 ミニゲーム</b><span id="mg-hud"></span></div>
+        <div class="mg-item" id="mg-item"></div>
+        <div class="mg-prog"><i id="mg-prog"></i></div>
+        <div class="mg-stage" id="mg-stage"></div>
+        <div class="mg-say" id="mg-say"></div>
+        <div class="mg-flash" id="mg-flash"></div>
+        <div class="mg-result" id="mg-result"></div>
+        <div class="mg-card" id="mg-card">
+          <div class="mg-card-ico" id="mg-card-ico">🔨</div>
+          <div class="mg-card-name" id="mg-card-name"></div>
+          <div class="mg-card-rule" id="mg-card-rule"></div>
+          <div class="mg-card-grade"><span>失敗 → ふつう</span><span class="g">成功 → ATK×1.5</span><span class="gg">大成功 → ATK×2</span></div>
+          <button class="btn-rpg is-orange" id="mg-start">▶ はじめる</button>
+          <button class="btn-rpg xs is-gray" id="mg-skip">ミニゲームなしで きたえる（ふつう）</button>
+        </div>
+      </div>
+    </div>
+
+  <!-- あそびかた -->
+  <div id="howto-modal" class="modal">
+    <div class="modal-box">
+      <div class="modal-title">❓ あそびかた</div>
+      <div class="modal-scroll howto-body">
+        <div class="howto-step"><b>⚔️ ぼうけん</b>モンスターや物を <em>れんだ</em> してたおそう。そざい が手に入るよ。</div>
+        <div class="howto-step"><b>⏱️ じかん</b>モンスターには せいげん時間 がある。時間切れだと HP がもとに戻っちゃう！</div>
+        <div class="howto-step"><b>🔨 かじや</b>マップを <em>ドラッグ</em> で動かして、つぎの ぶき を きたえよう。2本ゆびで ズーム もできるよ。</div>
+        <div class="howto-step"><b>🎯 かじの ミニゲーム</b>きたえるときに ミニゲーム（8しゅるい）！ <em>成功で ATK×1.5</em>、<em>大成功で ATK×2</em>。失敗しても ふつうの ぶきは できるよ。<br>作ったあとも、同じ そざいが あれば <em>🔁 打ち込みやり直し</em> で 大成功を めざせる！（できばえは 下がらないよ）</div>
+        <div class="howto-step"><b>⚡ タップLv</b>たたくほどレベルアップ。レベルが上がると あたらしいエリア に行けるよ。</div>
+        <div class="howto-step"><b>📖 ずかん</b>たおした モンスター、つくった ぶき が のっていくよ。ぜんぶ あつめよう！</div>
+      </div>
+      <button class="btn-rpg sm is-blue modal-close" data-close="howto-modal">とじる</button>
+    </div>
+  </div>
+
+  <!-- 確認ダイアログ（UI.confirm で使う） -->
+  <div id="dialog-modal" class="modal front">
+    <div class="modal-box dialog-box">
+      <div class="modal-title" id="dialog-title"></div>
+      <div class="dialog-body" id="dialog-body"></div>
+      <div class="dialog-btns"><button class="btn-rpg sm is-gray" id="dialog-cancel">やめる</button><button class="btn-rpg sm is-orange" id="dialog-ok">OK</button></div>
+    </div>
+  </div>
+
+  <!-- 画像の拡大 -->
+  <div id="zoom-modal" class="modal front" data-close="zoom-modal">
+    <div class="zoom-box"><img id="zoom-img" src="" alt=""><div id="zoom-caption"></div><div class="zoom-hint">タップでとじる</div></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     スクリプトの読み込み順（上から順番に読まれます）
+     1. 設定 → 2. データの受け取り口 → 3. データ → 4. しくみ → 5. 画面 → 6. 起動
+     武器・アクセの種類ファイルは自動で読み込まれます（下の 3. を参照）
+     ============================================================ -->
+<!-- 1. 設定 -->
+<script src="js/core/config.js"></script>
+<script src="data/balance.js"></script>
+<!-- 2. データの受け取り口 -->
+<script src="js/core/registry.js"></script>
+<!-- 3. データ -->
+<script src="data/areas.js"></script>
+<script src="data/regions.js"></script>
+<script src="data/materials.js"></script>
+<script src="data/monsters.js"></script>
+<script src="data/objects.js"></script>
+<script>
+  /* 武器・アクセのデータは config.js の種類一覧(WEAPON_TYPES / ACC_TYPES)から自動で読み込みます。
+     種類を増やすときは config.js に1行足して、data/weapons/{id}.js を作るだけでOK */
+  WEAPON_TYPES.forEach(t => document.write(`<script src="data/weapons/${t.id}.js"><\/script>`));
+  ACC_TYPES.forEach(t => document.write(`<script src="data/accessories/${t.id}.js"><\/script>`));
+</script>
+<script src="data/changelog.js"></script>
+<script src="data/secret_codes.js"></script>
+<script src="data/story.js"></script>
+<script src="data/achievements.js"></script>
+<!-- 4. しくみ -->
+<script src="js/core/ui.js"></script>
+<script src="js/core/audio.js"></script>
+<script src="js/core/save.js"></script>
+<script src="js/core/player.js"></script>
+<!-- 5. 画面 -->
+<script src="js/screens/menu.js"></script>
+<script src="js/screens/adventure.js"></script>
+<script src="js/screens/equip.js"></script>
+<script src="js/screens/settings.js"></script>
+<script src="js/screens/story.js"></script>
+<script src="js/screens/achievements.js"></script>
+<script src="js/screens/ending.js"></script>
+<script src="js/forge/mapView.js"></script>
+<script src="js/forge/minigames.js"></script>
+<script src="js/forge/forge.js"></script>
+<script src="js/zukan/zukan.js"></script>
+<!-- 6. 起動 -->
+<script src="js/main.js"></script>
+</body>
+</html>

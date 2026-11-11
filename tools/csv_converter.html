@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>スプレッドシート → データ変換ツール</title>
+<style>
+  :root { --ink:#23163a; --blue:#3346a8; --gold:#ffd84a; --cream:#fff6dc; --ok:#1f7a2c; --ng:#9e1c1c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; font-family: 'Hiragino Maru Gothic ProN','Meiryo',sans-serif; background: #e9ecf8; color: var(--ink); }
+  h1 { margin: 0 0 4px; font-size: 22px; }
+  .lead { margin: 0 0 16px; font-size: 13px; line-height: 1.7; }
+  .card { background: #fff; border: 3px solid var(--ink); border-radius: 14px; padding: 14px; margin-bottom: 14px; box-shadow: 0 4px 0 var(--ink); max-width: 980px; }
+  .step { display: inline-block; background: var(--ink); color: #fff; border-radius: 999px; padding: 1px 10px; margin-right: 6px; font-size: 13px; }
+  .kinds { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .kinds label { border: 2px solid var(--ink); border-radius: 12px; padding: 8px 12px; cursor: pointer; background: var(--cream); font-weight: bold; font-size: 14px; }
+  .kinds input { margin-right: 6px; }
+  .kinds label:has(input:checked) { background: var(--gold); }
+  textarea { width: 100%; height: 180px; font-family: monospace; font-size: 12px; border: 2px solid var(--ink); border-radius: 10px; padding: 8px; }
+  button { font: inherit; font-weight: bold; border: 2px solid var(--ink); border-radius: 10px; padding: 8px 16px; cursor: pointer; background: var(--gold); box-shadow: 0 3px 0 var(--ink); }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+  button.sub { background: #fff; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; font-size: 13px; }
+  .file { border: 2px solid var(--ink); border-radius: 12px; margin-top: 10px; overflow: hidden; }
+  .file-head { display: flex; gap: 8px; align-items: center; background: var(--cream); padding: 8px 10px; flex-wrap: wrap; }
+  .file-head b { flex: 1; min-width: 200px; }
+  .file pre { margin: 0; max-height: 220px; overflow: auto; font-size: 11px; padding: 8px; background: #fbfbfe; }
+  .msg { font-size: 13px; line-height: 1.7; }
+  .msg .ok { color: var(--ok); } .msg .ng { color: var(--ng); }
+  details { font-size: 13px; line-height: 1.7; }
+  code { background: #eef; padding: 0 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>📋 スプレッドシート → データ変換ツール</h1>
+<p class="lead">Googleスプレッドシートの表をコピーして貼り付けると、ゲーム用のデータファイル（<code>data/</code> フォルダの .js）を作ります。<br>
+このページは <b>ダブルクリックで開くだけ</b> で使えます（インストール不要）。シートに無い項目（画像名・絵文字など）は、今のデータファイルから引き継ぎます。</p>
+
+<div class="card">
+  <div><span class="step">1</span><b>どのシート？</b></div>
+  <div class="kinds" id="kinds">
+    <label><input type="radio" name="kind" value="weapon" checked>⚔️ weapon（武器10種まとめて）</label>
+    <label><input type="radio" name="kind" value="accessory">💍 accessory（アクセ5種まとめて）</label>
+    <label><input type="radio" name="kind" value="stage">🗺️ stage（エリア）</label>
+    <label><input type="radio" name="kind" value="material">🪵 material（素材）</label>
+    <label><input type="radio" name="kind" value="monster">👾 monster（モンスター）</label>
+    <label><input type="radio" name="kind" value="object">📦 object（オブジェクト）</label>
+  </div>
+</div>
+
+<div class="card">
+  <div><span class="step">2</span><b>シートを貼り付け</b> <small>（シートを開いて Ctrl+A → Ctrl+C → ここで Ctrl+V）／ CSV・TSVファイルを選んでもOK</small></div>
+  <textarea id="src" placeholder="ここに貼り付け"></textarea>
+  <div class="row">
+    <input type="file" id="file" accept=".csv,.tsv,.txt">
+    <label><input type="checkbox" id="keep" checked> シートに無い既存データ（旧版の素材など）も残す</label>
+  </div>
+</div>
+
+<div class="card">
+  <div><span class="step">3</span><b>変換</b></div>
+  <div class="row"><button id="go">🔄 変換する</button><button class="sub" id="dlall" hidden>⬇️ ぜんぶダウンロード</button></div>
+  <div class="msg" id="msg"></div>
+  <div id="out"></div>
+</div>
+
+<div class="card">
+  <details><summary><b>📖 使い方・列の名前</b></summary>
+  <p>・1行目に <code>No.</code> がある行を「見出し」として読みます。見出しの名前は英語・日本語どちらでもOK。<br>
+  ・<b>weapon / accessory</b> は今のシートと同じ「種類ごとに横に並んだ表」に対応しています。見出しの1行上に種類名（スティック、杖…）を書いてください。<br>
+  ・できたファイルを <code>data/</code> の同じ名前のファイルと入れ替えれば完了です（weapon なら <code>data/weapons/</code> に10個）。</p>
+  <table border="1" cellpadding="4" style="border-collapse:collapse;font-size:12px">
+    <tr><th>データの項目</th><th>見出しに使える名前</th></tr>
+    <tr><td>no</td><td>No. / No / 番号 / 段階</td></tr>
+    <tr><td>name</td><td>Name / 名前</td></tr>
+    <tr><td>atk</td><td>attacks / atk / 攻撃力</td></tr>
+    <tr><td>desc</td><td>Summary / 説明</td></tr>
+    <tr><td>area</td><td>Area No. / Area / エリア</td></tr>
+    <tr><td>cost</td><td>material / 素材 / 必要素材 （例：ヒノキの木材×3, ヒノキのつる×2）</td></tr>
+    <tr><td>hp / time</td><td>HP / time / 制限時間</td></tr>
+    <tr><td>drop</td><td>Drop / ドロップ</td></tr>
+    <tr><td>level / theme</td><td>Level / レベル ／ theme / テーマ</td></tr>
+    <tr><td>image / icon</td><td>image / 画像 ／ icon / sprite / 絵文字</td></tr>
+  </table></details>
+</div>
+
+<!-- ゲームの設定（種類の名前）を読む -->
+<script src="../js/core/config.js"></script>
+<script>
+  // 今のデータファイルを読み込んで覚えておく（シートに無い項目を引き継ぐため）
+  const CUR = { areas: [], materials: [], monsters: [], objects: [], weapon: {}, acc: {} };
+  function registerAreas(l) { CUR.areas.push(...l); }
+  function registerRegions(l) { }
+  function registerMaterials(l) { CUR.materials.push(...l); }
+  function registerMonsters(l) { CUR.monsters.push(...l); }
+  function registerObjects(l) { CUR.objects.push(...l); }
+  function registerWeapons(t, l) { (CUR.weapon[t] = CUR.weapon[t] || []).push(...l); }
+  function registerAccessories(t, l) { (CUR.acc[t] = CUR.acc[t] || []).push(...l); }
+  ['areas', 'materials', 'monsters', 'objects'].forEach(n => document.write(`<script src="../data/${n}.js"><\/script>`));
+  WEAPON_TYPES.forEach(t => document.write(`<script src="../data/weapons/${t.id}.js"><\/script>`));
+  ACC_TYPES.forEach(t => document.write(`<script src="../data/accessories/${t.id}.js"><\/script>`));
+</script>
+<script>
+/* ---------- 表の読み込み（TSV / CSV） ---------- */
+function parseTable(text) {
+  text = text.replace(/\r\n?/g, '\n');
+  const delim = text.split('\n').slice(0, 5).some(l => l.includes('\t')) ? '\t' : ',';
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (c === '"') q = false;
+      else cell += c;
+    } else if (c === '"' && cell === '') q = true;
+    else if (c === delim) { row.push(cell); cell = ''; }
+    else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += c;
+  }
+  if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+  return rows.map(r => r.map(c => c.trim()));
+}
+
+const ALIAS = {
+  no: ['no.', 'no', '番号', '段階', 'no．'],
+  name: ['name', '名前', '名称'],
+  atk: ['attacks', 'attack', 'atk', '攻撃力', 'こうげき'],
+  desc: ['summary', '説明', 'desc', '解説'],
+  area: ['area no.', 'area no', 'area', 'エリア', 'エリア番号', 'エリアno.'],
+  cost: ['material', 'materials', '素材', '必要素材', 'cost'],
+  hp: ['hp', '体力'],
+  time: ['time', '制限時間', '時間'],
+  drop: ['drop', 'ドロップ', '落とす素材'],
+  level: ['level', 'レベル', 'lv'],
+  theme: ['theme', 'テーマ'],
+  image: ['image', '画像', '画像ファイル名', 'ファイル名'],
+  icon: ['icon', 'sprite', '絵文字', 'アイコン']
+};
+const keyOf = (h) => { h = String(h || '').trim().toLowerCase(); return Object.keys(ALIAS).find(k => ALIAS[k].includes(h)) || null; };
+const isNoHeader = (h) => keyOf(h) === 'no';
+
+/* 見出し行と「列 → 項目」の対応を探す。blocks: 横に並んだ表を分ける */
+function findBlocks(rows) {
+  const hi = rows.findIndex(r => r.some(isNoHeader));
+  if (hi < 0) throw new Error('「No.」の見出しが見つかりません');
+  const head = rows[hi], above = rows[hi - 1] || [];
+  const starts = head.map((h, j) => isNoHeader(h) ? j : -1).filter(j => j >= 0);
+  return starts.map((s, bi) => {
+    const end = starts[bi + 1] != null ? starts[bi + 1] : head.length;
+    const cols = {};
+    for (let j = s; j < end; j++) { const k = keyOf(head[j]); if (k && cols[k] == null) cols[k] = j; }
+    let title = '';
+    for (let j = s; j < end && !title; j++) if (above[j]) title = above[j];
+    return { title, cols, rows: rows.slice(hi + 1) };
+  });
+}
+function readRows(block) {
+  const out = [];
+  block.rows.forEach(r => {
+    const no = parseInt(r[block.cols.no], 10);
+    if (!no) return;
+    const d = { no };
+    Object.entries(block.cols).forEach(([k, j]) => {
+      if (k === 'no') return;
+      let v = r[j]; if (v == null || v === '') return;
+      if (['atk', 'hp', 'time', 'level', 'area'].includes(k) && /^-?\d+(\.\d+)?$/.test(v)) v = Number(v);
+      if (k === 'cost' && /^[（(]/.test(v)) return;             // （初期装備）などのメモは無視
+      d[k] = v;
+    });
+    out.push(d);
+  });
+  return out;
+}
+/* 今のデータと合体（シートの値が優先） */
+function merge(sheetList, curList, keepOthers, hasName = true) {
+  const cur = {}; curList.forEach(c => { cur[c.no] = c; });
+  const map = {};
+  sheetList.forEach(s => { if (hasName && !s.name) return; map[s.no] = Object.assign({}, cur[s.no] || {}, s); });
+  if (keepOthers) curList.forEach(c => { if (!map[c.no] && c.name) map[c.no] = c; });
+  return Object.values(map).sort((a, b) => a.no - b.no);
+}
+
+/* ---------- 書き出し（ゲームと同じ形） ---------- */
+const ORDER = ['no', 'name', 'area', 'theme', 'level', 'atk', 'hp', 'time', 'cost', 'drop', 'icon', 'sprite', 'image', 'bg', 'bgm', 'mapImage', 'desc'];
+const jsv = (v) => typeof v === 'number' ? String(v) : `'${String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n')}'`;
+const ord = (k) => { const i = ORDER.indexOf(k); return i < 0 ? 999 : i; };
+const obj = (d) => '{ ' + Object.keys(d).sort((a, b) => ord(a) - ord(b)).filter(k => d[k] !== undefined && d[k] !== null).map(k => `${k}: ${jsv(d[k])}`).join(', ') + ' }';
+const stamp = () => new Date().toLocaleString('ja-JP');
+
+function writeLine(kind, type, list) {
+  const folder = kind === 'weapon' ? 'weapon' : 'acc';
+  const fn = kind === 'weapon' ? 'registerWeapons' : 'registerAccessories';
+  const byNo = {}; list.forEach(d => { byNo[d.no] = d; });
+  const areaName = {}; CUR.areas.forEach(a => { areaName[a.no] = a.name; });
+  const L = [
+    '/* ==========================================================',
+    `   ${type.id}.js  ―  ${kind === 'weapon' ? '武器' : 'アクセサリー'}「${type.name}」（全${GAME.stageCount(kind)}段階）`,
+    `   ※ tools/csv_converter.html で作成（${stamp()}）`,
+    '   ----------------------------------------------------------',
+    '   no:段階  name:名前（空欄＝準備中）  atk:攻撃力  cost:必要素材  desc:説明',
+    `   image:画像（空欄なら assets/images/${folder}/${type.id}/${type.id}_段階3桁.png）`,
+    '   ========================================================== */',
+    `${fn}('${type.id}', [`];
+  const per = GAME.perArea(kind);
+  for (let no = 1; no <= GAME.stageCount(kind); no++) {
+    if ((no - 1) % per === 0) { const a = (no - 1) / per + 1; L.push(`  // ---- エリア${a} ${areaName[a] || ''} ----`); }
+    L.push('  ' + obj(byNo[no] || { no, name: '' }) + ',');
+  }
+  L.push(']);');
+  return L.join('\n') + '\n';
+}
+function writeSimple(fnName, title, list) {
+  return ['/* ==========================================================',
+    `   ${title}`, `   ※ tools/csv_converter.html で作成（${stamp()}）`,
+    '   項目の説明は docs/データの追加ガイド.md を見てください',
+    '   ========================================================== */',
+    `${fnName}([`, ...list.map(d => '  ' + obj(d) + ','), ']);'].join('\n') + '\n';
+}
+
+/* ---------- 変換 ---------- */
+let RESULT = [];
+function convert() {
+  const kind = document.querySelector('[name=kind]:checked').value;
+  const keep = document.getElementById('keep').checked;
+  const rows = parseTable(document.getElementById('src').value);
+  const msgs = [];
+  const files = [];
+  const blocks = findBlocks(rows);
+
+  if (kind === 'weapon' || kind === 'accessory') {
+    const k = kind === 'weapon' ? 'weapon' : 'acc';
+    const types = kind === 'weapon' ? WEAPON_TYPES : ACC_TYPES;
+    blocks.forEach((b, i) => {
+      const t = types.find(t => t.name === b.title) || (!b.title && types[i]);
+      if (!t) { msgs.push(`<span class="ng">✖ 種類「${b.title}」が config.js にありません（スキップ）</span>`); return; }
+      const list = merge(readRows(b), CUR[k][t.id] || [], keep);
+      files.push({ name: `${t.id}.js`, dir: kind === 'weapon' ? 'data/weapons/' : 'data/accessories/', text: writeLine(k, t, list) });
+      msgs.push(`<span class="ok">✔ ${t.name}（${t.id}.js）：名前あり ${list.filter(d => d.name).length} 件</span>`);
+    });
+  } else {
+    const b = blocks[0];
+    const conf = {
+      stage: ['areas', 'registerAreas', 'areas.js  ―  エリア'],
+      material: ['materials', 'registerMaterials', 'materials.js  ―  素材'],
+      monster: ['monsters', 'registerMonsters', 'monsters.js  ―  モンスター'],
+      object: ['objects', 'registerObjects', 'objects.js  ―  オブジェクト']
+    }[kind];
+    const list = merge(readRows(b), CUR[conf[0]], keep);
+    if ((kind === 'monster' || kind === 'object') && b.cols.area == null) msgs.push('<span class="ng">⚠ シートに「Area No.」の列がありません。既存データに無いものはエリア1になります</span>');
+    list.forEach(d => { if ((kind === 'monster' || kind === 'object') && !d.area) d.area = 1; });
+    files.push({ name: `${conf[0]}.js`, dir: 'data/', text: writeSimple(conf[1], conf[2], list) });
+    msgs.push(`<span class="ok">✔ ${conf[0]}.js：${list.length} 件</span>`);
+  }
+  RESULT = files;
+  document.getElementById('msg').innerHTML = msgs.join('<br>') + (files.length ? `<br>⬇️ ダウンロードしたファイルを <code>${files[0].dir}</code> に上書きしてください。` : '');
+  const out = document.getElementById('out'); out.innerHTML = '';
+  files.forEach((f, i) => {
+    const d = document.createElement('div'); d.className = 'file';
+    d.innerHTML = `<div class="file-head"><b>📄 ${f.dir}${f.name}</b><button class="sub" data-c="${i}">📋 コピー</button><button data-d="${i}">⬇️ ダウンロード</button></div><pre></pre>`;
+    d.querySelector('pre').textContent = f.text.split('\n').slice(0, 40).join('\n') + (f.text.split('\n').length > 40 ? '\n…' : '');
+    out.appendChild(d);
+  });
+  document.getElementById('dlall').hidden = files.length < 2;
+}
+function download(f) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([f.text], { type: 'text/javascript' }));
+  a.download = f.name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+document.getElementById('go').onclick = () => { try { convert(); } catch (e) { document.getElementById('msg').innerHTML = `<span class="ng">✖ ${e.message}</span>`; } };
+document.getElementById('out').onclick = (e) => {
+  const c = e.target.dataset.c, d = e.target.dataset.d;
+  if (c != null) navigator.clipboard.writeText(RESULT[c].text).then(() => { e.target.textContent = '✔ コピーした'; });
+  if (d != null) download(RESULT[d]);
+};
+document.getElementById('dlall').onclick = () => RESULT.forEach((f, i) => setTimeout(() => download(f), i * 300));
+document.getElementById('file').onchange = (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  f.text().then(t => { document.getElementById('src').value = t; });
+};
+</script>
+</body>
+</html>

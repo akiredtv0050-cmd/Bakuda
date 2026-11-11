@@ -1,0 +1,16 @@
+{
+  "name": "爆打錬成！武器鍛冶クラフター",
+  "short_name": "武器鍛冶クラフター",
+  "start_url": "./index.html",
+  "scope": "./",
+  "id": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1d2872",
+  "theme_color": "#24307a",
+  "lang": "ja",
+  "icons": [
+    { "src": "assets/images/icon/icon.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/images/icon/icon.png", "sizes": "192x192", "type": "image/png" }
+  ]
+}

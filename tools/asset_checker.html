@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>画像・音チェッカー</title>
+<style>
+  :root { --ink:#23163a; --gold:#ffd84a; --cream:#fff6dc; --ok:#1f7a2c; --ng:#9e1c1c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; font-family: 'Hiragino Maru Gothic ProN','Meiryo',sans-serif; background: #e9ecf8; color: var(--ink); }
+  h1 { margin: 0 0 4px; font-size: 22px; }
+  .lead { margin: 0 0 14px; font-size: 13px; line-height: 1.7; max-width: 980px; }
+  .bar-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; font-size: 13px; }
+  button { font: inherit; font-weight: bold; border: 2px solid var(--ink); border-radius: 10px; padding: 6px 14px; cursor: pointer; background: var(--gold); box-shadow: 0 3px 0 var(--ink); }
+  button.sub { background: #fff; padding: 3px 10px; font-size: 12px; }
+  .sum { font-size: 15px; font-weight: bold; }
+  .cat { background: #fff; border: 3px solid var(--ink); border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; max-width: 980px; box-shadow: 0 3px 0 var(--ink); }
+  .cat-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .cat-head b { min-width: 170px; }
+  .meter { flex: 1; min-width: 140px; height: 12px; background: #eee; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; }
+  .meter i { display: block; height: 100%; background: linear-gradient(90deg, #3ad6a8, #b8f05a); }
+  .num { font-family: monospace; font-size: 13px; }
+  details { margin-top: 6px; font-size: 12px; }
+  details pre { max-height: 220px; overflow: auto; background: #fbfbfe; border: 1px solid #ccd; border-radius: 8px; padding: 6px; margin: 4px 0; white-space: pre-wrap; }
+  .warn { color: var(--ng); }
+  .ok { color: var(--ok); }
+  code { background: #eef; padding: 0 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>🔍 画像・音チェッカー</h1>
+<p class="lead">データファイルを読んで「ゲームが探しにいく画像・音のファイル名」を全部しらべ、<b>ある / ない / 大きすぎる</b> を一覧にします。<br>
+絵を描く人には「❌ ない」のファイル名リストをコピーして渡すと、名前のまちがいが防げます。ダブルクリックで開くだけで使えます。</p>
+
+<div class="bar-row">
+  <button id="run">▶ チェック開始</button>
+  <label><input type="checkbox" id="onlyReg" checked> 武器・アクセは「名前が登録済み」の段階だけ</label>
+  <button id="dl-items" title="tools/gen_item_images.py 用">📄 武器・アクセ一覧を保存（items.json）</button>
+  <button id="dl-targets" title="tools/gen_target_images.py 用">📄 モンスター・オブジェクト・素材一覧を保存（targets.json）</button>
+  <span class="sum" id="sum"></span>
+</div>
+<div id="warnings"></div>
+<div id="cats"></div>
+
+<script src="../js/core/config.js"></script>
+<script src="../data/balance.js"></script>
+<script src="../js/core/registry.js"></script>
+<script src="../data/areas.js"></script>
+<script src="../data/regions.js"></script>
+<script src="../data/materials.js"></script>
+<script src="../data/monsters.js"></script>
+<script src="../data/objects.js"></script>
+<script>
+  WEAPON_TYPES.forEach(t => document.write(`<script src="../data/weapons/${t.id}.js"><\/script>`));
+  ACC_TYPES.forEach(t => document.write(`<script src="../data/accessories/${t.id}.js"><\/script>`));
+</script>
+<script>const S = { settings: {} };</script>
+<script src="../js/core/audio.js"></script>
+<script>
+DB.finalize();
+/* 仮の絵を作るツール（tools/gen_*.py）用の 一覧を 保存する（データを変えたら 作りなおす） */
+function saveJson(name, obj) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(obj)], { type: 'application/json' }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+const themeOf = (no) => (DB.areas.find(a => a.no === no) || {}).theme || 'grass';
+document.getElementById('dl-items').onclick = () => saveJson('items.json',
+  Object.values(DB.itemById).filter(i => i.registered).map(i => ({ id: i.id, kind: i.kind, type: i.type, stage: i.stage, area: i.area, theme: themeOf(i.area), name: i.name, image: i.image })));
+document.getElementById('dl-targets').onclick = () => saveJson('targets.json', {
+  mons: DB.targets.filter(t => t.kind === 'monster').map(t => ({ id: t.id, no: t.no, name: t.name, area: t.area, theme: themeOf(t.area), boss: !!t.isBoss, sprite: t.sprite, image: t.image })),
+  objs: DB.targets.filter(t => t.kind === 'object').map(t => ({ id: t.id, no: t.no, name: t.name, area: t.area, theme: themeOf(t.area), sprite: t.sprite, image: t.image })),
+  mats: DB.materials.map(m => ({ id: m.id, no: m.no, name: m.name, area: m.area, theme: themeOf(m.area), icon: m.icon, image: m.image }))
+});
+
+/* 推奨サイズ（これより大きいと重くなる） */
+const LIMIT = { item: 512, bg: 1400, ui: 1000 };
+
+function buildList(onlyReg) {
+  const cats = [];
+  const add = (title, files, limit) => cats.push({ title, files: [...new Map(files.filter(f => f.path).map(f => [f.path, f])).values()], limit });
+  add('🖼️ 共通（背景・ロゴ・UI）', [
+    'assets/images/ui/logo_title.png', 'assets/images/ui/config.png', 'assets/images/ui/supika_o.png', 'assets/images/ui/supika_x.png',
+    'assets/images/icon/icon.png', 'assets/images/icon/favicon.png',
+    'assets/images/bg/bg_title.png', 'assets/images/bg/bg_menu.png', 'assets/images/bg/bg_craft.png', 'assets/images/bg/bg_zukan.png'
+  ].map(p => ({ path: p, type: 'img' })), LIMIT.bg);
+  add('🎵 BGM', [...Object.values(BGM), ...DB.areas.map(a => a.bgm)].map(p => ({ path: p, type: 'audio' })), 0);
+  add('🔊 効果音（無くても電子音で鳴ります）', Object.keys(SE_LIST).map(n => ({ path: `assets/se/${n}.mp3`, type: 'audio', optional: true })), 0);
+  add('🌄 エリア背景', DB.areas.map(a => ({ path: a.bg, type: 'img', label: `${a.no}.${a.name}` })), LIMIT.bg);
+  add('🏝️ 鍛冶マップの島イラスト（任意）', DB.areas.filter(a => a.mapImage).map(a => ({ path: a.mapImage, type: 'img', label: a.name })), LIMIT.item);
+  add('👾 モンスター', DB.targets.filter(t => t.kind === 'monster').map(t => ({ path: t.image, type: 'img', label: t.name })), LIMIT.item);
+  add('📦 オブジェクト', DB.targets.filter(t => t.kind === 'object').map(t => ({ path: t.image, type: 'img', label: t.name })), LIMIT.item);
+  add('🪵 素材', DB.materials.map(m => ({ path: m.image, type: 'img', label: m.name })), LIMIT.item);
+  WEAPON_TYPES.forEach(t => add(`⚔️ 武器：${t.name}（${t.id}）`, Data.line('weapon', t.id).filter(i => !onlyReg || i.registered).map(i => ({ path: i.image, type: 'img', label: `No.${i.stage} ${i.name}` })), LIMIT.item));
+  ACC_TYPES.forEach(t => add(`💍 アクセ：${t.name}（${t.id}）`, Data.line('acc', t.id).filter(i => !onlyReg || i.registered).map(i => ({ path: i.image, type: 'img', label: `No.${i.stage} ${i.name}` })), LIMIT.item));
+  return cats;
+}
+
+/* ファイルがあるか調べる（file:// でも動くように画像・音として読んでみる） */
+function probe(f) {
+  return new Promise(res => {
+    const src = '../' + f.path;
+    if (f.type === 'img') {
+      const im = new Image();
+      im.onload = () => res({ ok: true, w: im.naturalWidth, h: im.naturalHeight });
+      im.onerror = () => res({ ok: false });
+      im.src = src;
+    } else {
+      const a = new Audio(); let done = false;
+      const fin = (ok) => { if (!done) { done = true; res({ ok }); } };
+      a.addEventListener('loadedmetadata', () => fin(true));
+      a.addEventListener('error', () => fin(false));
+      setTimeout(() => fin(false), 6000);
+      a.preload = 'metadata'; a.src = src;
+    }
+  });
+}
+async function runPool(tasks, n) {
+  let i = 0; const out = new Array(tasks.length);
+  await Promise.all(Array.from({ length: n }, async () => { while (i < tasks.length) { const k = i++; out[k] = await tasks[k](); } }));
+  return out;
+}
+
+document.getElementById('run').onclick = async () => {
+  const cats = buildList(document.getElementById('onlyReg').checked);
+  const box = document.getElementById('cats'); box.innerHTML = '';
+  const w = document.getElementById('warnings');
+  w.innerHTML = DB.warnings.length ? `<div class="cat"><b class="warn">⚠ データの注意（${DB.warnings.length}件）</b><pre>${DB.warnings.join('\n')}</pre></div>` : '<div class="cat ok">✔ データの書きまちがいは見つかりませんでした</div>';
+  let total = 0, have = 0;
+  for (const c of cats) {
+    const el = document.createElement('div'); el.className = 'cat';
+    el.innerHTML = `<div class="cat-head"><b>${c.title}</b><span class="num">しらべ中…</span></div>`;
+    box.appendChild(el);
+    const res = await runPool(c.files.map(f => () => probe(f)), 16);
+    const miss = [], big = [];
+    res.forEach((r, i) => {
+      const f = c.files[i];
+      if (!r.ok) miss.push(f); else if (c.limit && Math.max(r.w, r.h) > c.limit) big.push(`${f.path}  (${r.w}×${r.h})`);
+    });
+    const ok = c.files.length - miss.length;
+    total += c.files.length; have += ok;
+    const pct = c.files.length ? Math.round(ok / c.files.length * 100) : 100;
+    el.innerHTML = `<div class="cat-head"><b>${c.title}</b><div class="meter"><i style="width:${pct}%"></i></div><span class="num">${ok} / ${c.files.length}</span>
+      ${miss.length ? '<button class="sub" data-copy>📋 ないファイル名をコピー</button>' : ''}</div>
+      ${miss.length ? `<details><summary class="warn">❌ ない：${miss.length} 件</summary><pre>${miss.map(f => f.path + (f.label ? '   … ' + f.label : '')).join('\n')}</pre></details>` : ''}
+      ${big.length ? `<details><summary class="warn">🐘 大きすぎる（${c.limit}px以下がおすすめ）：${big.length} 件</summary><pre>${big.join('\n')}</pre></details>` : ''}`;
+    const btn = el.querySelector('[data-copy]');
+    if (btn) btn.onclick = () => navigator.clipboard.writeText(miss.map(f => f.path.split('/').pop() + (f.label ? '\t' + f.label : '')).join('\n')).then(() => { btn.textContent = '✔ コピーした'; });
+    document.getElementById('sum').textContent = `ぜんぶで ${have} / ${total} ファイル`;
+  }
+};
+</script>
+</body>
+</html>

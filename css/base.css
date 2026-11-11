@@ -1,0 +1,223 @@
+/* ==========================================================
+   base.css  ―  色・文字・ボタン・ウィンドウなど「共通パーツ」
+   ----------------------------------------------------------
+   色を変えたいときは :root の変数だけ変えればゲーム全体に反映されます
+   ========================================================== */
+:root {
+  /* 文字 */
+  --font-title: 'Reggae One', 'Zen Maru Gothic', sans-serif;
+  --font-body: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Meiryo', sans-serif;
+  --font-pixel: 'DotGothic16', monospace;
+
+  /* 基本の色 */
+  --ink: #23163a;            /* ふち取り（こげ茶むらさき） */
+  --gold: #ffd84a;
+  --gold-deep: #e0a21a;
+  --cream: #fff6dc;
+  --win-top: #3346a8;        /* RPGウィンドウ（青） */
+  --win-bottom: #1d2872;
+  --win-edge: #0f1648;
+  --paper: #f6e7c1;          /* 図鑑の紙 */
+  --paper-ink: #5a3a1a;
+
+  /* ボタンの色 [明るい, ふつう, 暗い] */
+  --orange-1: #ffb347; --orange-2: #ff7a1a; --orange-3: #c94c00;
+  --blue-1:   #7cc4ff; --blue-2:   #3a86e8; --blue-3:   #1d4fa8;
+  --green-1:  #8fe08a; --green-2:  #3cb44b; --green-3:  #1f7a2c;
+  --red-1:    #ff8a8a; --red-2:    #e53b3b; --red-3:    #9e1c1c;
+  --purple-1: #d6a6ff; --purple-2: #9a55e0; --purple-3: #5f2a9e;
+  --gray-1:   #c9ced6; --gray-2:   #8a93a3; --gray-3:   #555d6b;
+
+  /* バー */
+  --hp: linear-gradient(90deg, #4be36a, #b6f25a);
+  --exp: linear-gradient(90deg, #4fc3ff, #7a7bff);
+  --time: linear-gradient(90deg, #ff9a3d, #ff4d4d);
+  --zukan: linear-gradient(90deg, #3ad6a8, #b8f05a);
+
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  background: radial-gradient(circle at 50% 30%, #3a4fb8 0%, #1a1f4f 70%);
+  color: #fff;
+  font-family: var(--font-body);
+  font-weight: 700;
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; min-height: 100dvh;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+button { font-family: inherit; color: inherit; }
+img { image-rendering: pixelated; }
+[hidden] { display: none !important; }
+
+#game-container {
+  position: relative;
+  width: 100vw; max-width: 480px;
+  height: 100vh; height: 100dvh; max-height: 860px;
+  overflow: hidden;
+  background: #1d2872;
+  box-shadow: 0 0 0 4px #fff, 0 0 0 8px var(--ink), 0 12px 40px rgba(0, 0, 0, .6);
+}
+@media (min-width: 768px) {
+  #game-container { height: 92vh; border-radius: 18px; }
+}
+
+/* ---------- 画面（screen）：1つだけ表示 ---------- */
+.screen {
+  position: absolute; inset: 0;
+  display: none;
+  flex-direction: column; align-items: center;
+  background-size: cover; background-position: center;
+  padding: max(10px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom));
+}
+.screen.active { display: flex; }
+
+/* ---------- RPGウィンドウ（青いまど） ---------- */
+.rpg-window {
+  background: linear-gradient(180deg, var(--win-top), var(--win-bottom));
+  border: 3px solid #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 0 0 3px var(--win-edge), 0 6px 0 3px rgba(0, 0, 0, .25);
+  color: #fff;
+}
+
+/* ---------- ボタン（ぷっくり丸いRPGボタン） ---------- */
+.btn-rpg {
+  --c1: var(--orange-1); --c2: var(--orange-2); --c3: var(--orange-3);
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 18px;
+  font-family: var(--font-body); font-weight: 900; font-size: 16px; letter-spacing: .5px;
+  color: #fff;
+  background: linear-gradient(180deg, var(--c1) 0%, var(--c2) 52%, var(--c3) 100%);
+  border: 3px solid #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 0 0 3px var(--ink), 0 5px 0 3px var(--ink);
+  text-shadow: -1.5px -1.5px 0 var(--c3), 1.5px -1.5px 0 var(--c3), -1.5px 1.5px 0 var(--c3), 1.5px 1.5px 0 var(--c3), 0 2px 0 var(--ink);
+  cursor: pointer;
+  transition: transform .06s, box-shadow .06s, filter .1s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.btn-rpg::after {             /* 上のツヤ */
+  content: ''; position: absolute; left: 8%; right: 8%; top: 3px; height: 34%;
+  border-radius: 10px; background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0));
+  pointer-events: none;
+}
+.btn-rpg:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 0 0 3px var(--ink), 0 1px 0 3px var(--ink); }
+.btn-rpg:disabled { filter: grayscale(.85) brightness(.8); cursor: not-allowed; }
+.btn-rpg.sm { padding: 6px 12px; font-size: 14px; border-radius: 12px; box-shadow: 0 0 0 2.5px var(--ink), 0 4px 0 2.5px var(--ink); border-width: 2.5px; }
+.btn-rpg.sm:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 0 0 2.5px var(--ink), 0 1px 0 2.5px var(--ink); }
+.btn-rpg.xs { padding: 3px 9px; font-size: 12px; border-radius: 10px; border-width: 2px; box-shadow: 0 0 0 2px var(--ink), 0 3px 0 2px var(--ink); }
+.btn-rpg.xs::after { top: 2px; }
+.btn-rpg.wide { width: 100%; }
+.is-orange { --c1: var(--orange-1); --c2: var(--orange-2); --c3: var(--orange-3); }
+.is-blue   { --c1: var(--blue-1);   --c2: var(--blue-2);   --c3: var(--blue-3); }
+.is-green  { --c1: var(--green-1);  --c2: var(--green-2);  --c3: var(--green-3); }
+.is-red    { --c1: var(--red-1);    --c2: var(--red-2);    --c3: var(--red-3); }
+.is-purple { --c1: var(--purple-1); --c2: var(--purple-2); --c3: var(--purple-3); }
+.is-gray   { --c1: var(--gray-1);   --c2: var(--gray-2);   --c3: var(--gray-3); }
+
+/* 丸いアイコンボタン（設定など） */
+.round-icon-btn {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: linear-gradient(180deg, var(--win-top), var(--win-bottom));
+  border: 3px solid #fff; box-shadow: 0 0 0 3px var(--ink), 0 4px 0 3px var(--ink);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px;
+}
+.round-icon-btn img { width: 24px; height: 24px; }
+.round-icon-btn:active { transform: translateY(3px); box-shadow: 0 0 0 3px var(--ink), 0 1px 0 3px var(--ink); }
+
+/* 音ボタン（スピーカー画像） */
+.sound-btn { background: rgba(0,0,0,.35); border: 2px solid #fff; border-radius: 10px; padding: 4px 6px; cursor: pointer; display: flex; align-items: center; }
+.sound-btn img { width: 22px; height: 22px; }
+.sound-btn.big img { width: 34px; height: 34px; }
+
+/* ---------- バー ---------- */
+.bar-outer { width: 100%; height: 12px; background: #0b1040; border: 2px solid #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 0 0 2px var(--ink); }
+.bar-inner { height: 100%; width: 0%; border-radius: 6px; transition: width .2s ease; background: var(--exp); }
+.bar-inner.is-hp { background: var(--hp); }
+.bar-inner.is-exp { background: var(--exp); }
+.bar-inner.is-time { background: var(--time); transition: width .1s linear; }
+.bar-inner.is-zukan { background: var(--zukan); }
+
+/* ---------- チップ（種類えらび） ---------- */
+.chip-row { display: flex; gap: 6px; overflow-x: auto; width: 100%; padding: 4px 2px 8px; scrollbar-width: none; flex-shrink: 0; touch-action: pan-x; overscroll-behavior-x: contain; cursor: grab; -webkit-overflow-scrolling: touch; }
+.chip-row.dragging { cursor: grabbing; }
+.chip-row.dragging .chip { pointer-events: none; }
+/* 左右の ‹ › ボタンつき */
+.chip-scroller { position: relative; display: flex; align-items: center; gap: 4px; width: 100%; flex-shrink: 0; }
+.chip-scroller .chip-row { flex: 1; min-width: 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%); }
+.chip-arrow { flex-shrink: 0; width: 28px; height: 32px; margin-bottom: 4px; border-radius: 10px; font-size: 20px; font-weight: 900; line-height: 1; color: var(--ink); background: #fff; border: 2.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); cursor: pointer; }
+.chip-arrow:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.chip-arrow.off { opacity: .3; pointer-events: none; }
+.chip-scroller.no-overflow .chip-arrow { display: none; }
+.chip-scroller.no-overflow .chip-row { -webkit-mask-image: none; mask-image: none; }
+.chip-row::-webkit-scrollbar { display: none; }
+.chip {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 11px; font-size: 13px; font-weight: 900;
+  background: #fff; color: var(--ink);
+  border: 2.5px solid var(--ink); border-radius: 999px; cursor: pointer;
+  box-shadow: 0 3px 0 var(--ink);
+}
+.chip small { font-family: var(--font-pixel); font-weight: 400; font-size: 11px; opacity: .7; }
+.chip.active { background: var(--gold); box-shadow: 0 3px 0 var(--ink), inset 0 -3px 0 var(--gold-deep); }
+.chip:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+
+/* ---------- ポップアップ（モーダル） ---------- */
+.modal {
+  position: absolute; inset: 0; z-index: 100;
+  display: none; justify-content: center; align-items: center;
+  background: rgba(10, 12, 50, .62);
+  padding: 16px;
+}
+.modal.open { display: flex; animation: fadeIn .15s ease; }
+.modal.front { z-index: 300; }
+.modal-box {
+  width: 100%; max-width: 400px; max-height: 86%;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 14px 12px 16px;
+  background: linear-gradient(180deg, var(--win-top), var(--win-bottom));
+  border: 3px solid #fff; border-radius: 18px;
+  box-shadow: 0 0 0 3px var(--win-edge), 0 10px 30px rgba(0,0,0,.5);
+  animation: popIn .22s cubic-bezier(.2, 1.4, .4, 1);
+}
+.modal-title { font-family: var(--font-title); font-size: 20px; color: var(--gold); text-shadow: 2px 2px 0 var(--ink), -1px -1px 0 var(--ink), 1px -1px 0 var(--ink), -1px 1px 0 var(--ink); text-align: center; flex-shrink: 0; }
+.modal-scroll { width: 100%; flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 2px 4px; }
+.modal-close { flex-shrink: 0; margin-top: 4px; min-width: 120px; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ---------- 画像が無いときの代用絵文字 ---------- */
+.img-fb { display: inline-flex; align-items: center; justify-content: center; line-height: 1; font-size: 34px; }
+
+/* ---------- ふわっと出る文字 ---------- */
+.pop-text {
+  position: absolute; z-index: 30; pointer-events: none;
+  font-family: var(--font-title); font-size: 22px; color: #fff;
+  text-shadow: 2px 2px 0 var(--ink), -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink);
+  animation: popUp .7s ease-out forwards;
+}
+.pop-text.crit { color: var(--gold); font-size: 28px; }
+@keyframes popUp { 0% { transform: translate(-50%, 0) scale(.6); opacity: 0; } 20% { transform: translate(-50%, -14px) scale(1.15); opacity: 1; } 100% { transform: translate(-50%, -54px) scale(1); opacity: 0; } }
+
+/* ---------- スクロールバー ---------- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,.2); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px; }
+
+/* ---------- 横向き禁止 ---------- */
+#rotate-guard { display: none; }
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  #rotate-guard { display: flex; position: fixed; inset: 0; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: #1d2872; color: #fff; text-align: center; }
+  #rotate-guard .rg-ico { font-size: 60px; animation: rgSpin 1.6s ease-in-out infinite; }
+  #rotate-guard .rg-title { font-family: var(--font-title); font-size: 22px; color: var(--gold); }
+}
+@keyframes rgSpin { 0%, 30% { transform: rotate(90deg); } 60%, 100% { transform: rotate(0); } }
